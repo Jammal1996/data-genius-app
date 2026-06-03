@@ -35,8 +35,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['CHARTS_FOLDER'], exist_ok=True)
 
 # ── Prometheus metrics (/metrics endpoint) ──────────────────────────────────
-metrics = PrometheusMetrics(app)
-metrics.info('app_info', 'DataGenius application info', version='1.0.0')
+prom_metrics = PrometheusMetrics(app)
+prom_metrics.info('app_info', 'DataGenius application info', version='1.0.0')
 
 
 @app.route('/health')
