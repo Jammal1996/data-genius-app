@@ -1,58 +1,15 @@
-# render.yaml — DataGenius Blueprint
-# Place this file in the ROOT of your GitHub/GitLab repo.
-# Then go to Render Dashboard → New → Blueprint and connect your repo.
-# Render will read this file and create everything automatically.
-
 services:
   - type: web
     name: data-genius
-    runtime: docker                  # Use our Dockerfile
+    runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-
-    # Render injects $PORT automatically — gunicorn must bind to it
-    # (the Dockerfile CMD is overridden here to use $PORT)
-    startCommand: >
-      gunicorn
-      --bind 0.0.0.0:$PORT
-      --workers 2
-      --threads 4
-      --timeout 120
-      --access-logfile -
-      --error-logfile -
-      app:app
-
-    # Health check — Render will verify the app is up before routing traffic
     healthCheckPath: /
-
-    # Auto-deploy on every push to main
     autoDeploy: true
-
-    # ── Persistent disk for uploaded files & generated charts ──────────────
-    # Without this, static/uploads and static/charts reset on every deploy.
-    # Requires a paid plan ($7/month minimum).
-    # Comment out if you're on the free tier and don't need persistence.
-    disk:
-      name: data-genius-storage
-      mountPath: /app/static
-      sizeGB: 5
-
     envVars:
       - key: FLASK_ENV
         value: production
-
-      - key: PYTHON_VERSION
-        value: "3.11.0"
-
       - key: PYTHONUNBUFFERED
         value: "1"
-
-      # SECRET_KEY must be set manually in the Render dashboard
-      # (Dashboard → data-genius → Environment → Add Secret)
-      # Never commit the actual value here.
       - key: SECRET_KEY
-        sync: false          # Render will prompt you to fill this in
-
-      # Optional: set max upload size (matches app.py MAX_CONTENT_LENGTH = 32MB)
-      - key: MAX_CONTENT_LENGTH
-        value: "33554432"
+        sync: false
