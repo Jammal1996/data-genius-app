@@ -8,3 +8,4 @@ Werkzeug>=3.0.0
 xlrd>=2.0.1
 reportlab>=4.0.0
 gunicorn>=21.0.0
+prometheus-flask-exporter>=0.23.0

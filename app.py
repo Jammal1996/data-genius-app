@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from flask import Flask, render_template, request, jsonify, send_from_directory, session
 from werkzeug.utils import secure_filename
+from prometheus_flask_exporter import PrometheusMetrics
 
 # ----------------------------------------------------------------------------
 # App configuration
@@ -32,6 +33,17 @@ ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls', 'tsv'}
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['CHARTS_FOLDER'], exist_ok=True)
+
+# ── Prometheus metrics (/metrics endpoint) ──────────────────────────────────
+metrics = PrometheusMetrics(app)
+metrics.info('app_info', 'DataGenius application info', version='1.0.0')
+
+
+@app.route('/health')
+def health():
+    """Health check endpoint for load balancers and monitoring."""
+    from datetime import datetime, timezone
+    return {'status': 'ok', 'timestamp': datetime.now(timezone.utc).isoformat()}, 200
 
 # Seaborn / matplotlib defaults — warm editorial palette to match the UI
 _PALETTE = ["#b8533a", "#3d6b63", "#b08534", "#7a6a8f", "#4f7a4d", "#a3402f"]
@@ -2026,10 +2038,6 @@ def report():
         'is_cleaned': info.get('cleaning_report') is not None,
     })
 
-
-@app.route('/health')
-def health():
-    return jsonify({'status': 'ok', 'datasets_loaded': len(DATASETS)})
 
 
 @app.errorhandler(413)
