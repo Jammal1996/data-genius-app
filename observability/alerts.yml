@@ -1,0 +1,63 @@
+# observability/alerts.yml
+
+groups:
+  - name: data-genius-alerts
+    interval: 30s
+    rules:
+
+      # ─── App is down ────────────────────────────────────────────────────
+      - alert: AppDown
+        expr: up{job="data-genius"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DataGenius is DOWN"
+          description: "The data-genius container has been unreachable for more than 1 minute."
+
+      # ─── High error rate (5xx responses) ────────────────────────────────
+      - alert: HighErrorRate
+        expr: |
+          rate(flask_http_request_total{status=~"5.."}[5m])
+          / rate(flask_http_request_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx error rate"
+          description: "More than 5% of requests are returning 5xx errors for 5 minutes."
+
+      # ─── Slow response times ─────────────────────────────────────────────
+      - alert: SlowResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(flask_http_request_duration_seconds_bucket[5m])
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow API responses"
+          description: "P95 response time exceeds 5 seconds for 5 minutes."
+
+      # ─── High CPU ─────────────────────────────────────────────────────────
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="data-genius"}[5m]) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "DataGenius CPU usage is above 85% for 10 minutes."
+
+      # ─── High memory ──────────────────────────────────────────────────────
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="data-genius"} / 1024 / 1024 > 900
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "DataGenius is using more than 900MB of RAM."

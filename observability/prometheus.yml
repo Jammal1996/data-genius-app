@@ -1,0 +1,38 @@
+# observability/prometheus.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    app: data-genius
+    env: production
+
+rule_files:
+  - alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []  # Add: ["alertmanager:9093"] when you add Alertmanager
+
+scrape_configs:
+  # ─── DataGenius Flask app ────────────────────────────────────────────────
+  # Note: Flask doesn't expose /metrics out of the box.
+  # Add prometheus-flask-exporter to requirements.txt and initialize in app.py:
+  #   from prometheus_flask_exporter import PrometheusMetrics
+  #   metrics = PrometheusMetrics(app)
+  - job_name: data-genius
+    static_configs:
+      - targets: ["web:8000"]
+    metrics_path: /metrics
+
+  # ─── Prometheus itself ────────────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ─── cAdvisor (container metrics) ────────────────────────────────────────
+  # Add cAdvisor service to docker-compose if needed
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]

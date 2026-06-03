@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DataGenius — Intelligent Data Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-paper"></div>
+<div class="bg-noise"></div>
+
+<!-- Header -->
+<header class="site-header">
+    <div class="container header-inner">
+        <div class="brand">
+            <div class="brand-logo">
+                <svg viewBox="0 0 36 36" width="34" height="34" aria-hidden="true">
+                    <circle cx="18" cy="18" r="17" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 24 L15 14 L21 19 L26 11" fill="none" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="10" cy="24" r="1.8" fill="currentColor"/>
+                    <circle cx="26" cy="11" r="1.8" fill="currentColor"/>
+                </svg>
+            </div>
+            <div>
+                <div class="brand-name">DataGenius</div>
+                <div class="brand-tag">Analysis Studio</div>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="#upload">Upload</a>
+            <a href="#summary">Summary</a>
+            <a href="#insights">Insights</a>
+            <a href="#cleaning">Clean</a>
+            <a href="#charts">Charts</a>
+            <a href="#chat">Assistant</a>
+        </nav>
+    </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container hero-inner">
+        <div class="hero-copy">
+            <span class="eyebrow">Analyze · Clean · Visualize · Report</span>
+            <h1 class="hero-title">
+                Turn raw spreadsheets<br>into <span class="accent-text">decisions.</span>
+            </h1>
+            <p class="hero-sub">
+                Upload a CSV or Excel file and DataGenius profiles it, runs a professional
+                cleaning pipeline, builds the visualizations, and writes a polished report —
+                with an assistant on hand for any question.
+            </p>
+            <div class="hero-meta">
+                <span class="hero-chip">CSV</span>
+                <span class="hero-chip">XLSX</span>
+                <span class="hero-chip">XLS</span>
+                <span class="hero-chip">TSV</span>
+                <span class="hero-divider"></span>
+                <span class="hero-note">Up to 32&nbsp;MB · runs locally</span>
+            </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+            <div class="art-frame">
+                <div class="art-frame-head">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="art-bars">
+                    <span style="--h:48%"></span><span style="--h:72%"></span>
+                    <span style="--h:38%"></span><span style="--h:88%"></span>
+                    <span style="--h:60%"></span><span style="--h:30%"></span>
+                    <span style="--h:54%"></span>
+                </div>
+                <svg class="art-line" viewBox="0 0 240 70" preserveAspectRatio="none">
+                    <path d="M0,52 L34,40 L68,46 L102,22 L136,30 L170,14 L204,22 L240,10"
+                          fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Upload -->
+<section id="upload" class="section">
+    <div class="container">
+        <h2 class="section-title">1 · Upload your dataset</h2>
+        <p class="section-sub">Supported formats: <code>.csv</code>, <code>.xlsx</code>, <code>.xls</code>, <code>.tsv</code>. Max size 32&nbsp;MB.</p>
+
+        <form id="upload-form" class="dropzone" enctype="multipart/form-data">
+            <div class="dz-inner">
+                <div class="dz-icon">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <div class="dz-text">
+                    <strong>Drop your file here</strong>
+                    <span>or click to browse</span>
+                </div>
+                <input type="file" id="file-input" name="file" accept=".csv,.xlsx,.xls,.tsv" hidden />
+                <button type="button" class="btn btn-primary" id="browse-btn">Choose file</button>
+                <div class="dz-filename" id="dz-filename"></div>
+            </div>
+        </form>
+
+        <div id="upload-status" class="upload-status" hidden>
+            <div class="spinner"></div>
+            <span id="upload-status-text">Analyzing your data…</span>
+        </div>
+
+        <div id="upload-error" class="alert alert-error" hidden></div>
+    </div>
+</section>
+
+<!-- Results -->
+<main id="results" class="results" hidden>
+
+    <!-- Summary -->
+    <section id="summary" class="section">
+        <div class="container">
+            <h2 class="section-title">2 · Dataset summary</h2>
+            <p class="section-sub" id="dataset-filename"></p>
+
+            <div class="stats-grid" id="stats-grid"></div>
+
+            <div class="card">
+                <h3 class="card-title">Key insights</h3>
+                <ul class="insights-list" id="insights-list"></ul>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Data preview</h3>
+                <div class="table-scroll">
+                    <table class="data-table" id="preview-table"></table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Column types</h3>
+                <div class="dtype-grid" id="dtype-grid"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Insights -->
+    <section id="insights" class="section">
+        <div class="container">
+            <h2 class="section-title">3 · AI Insights</h2>
+            <p class="section-sub">
+                DataGenius automatically analyzes distributions, relationships, data quality, and
+                structure to surface findings you might otherwise miss — no configuration needed.
+            </p>
+
+            <div class="ai-headline" id="ai-headline"></div>
+            <div class="ai-groups" id="ai-groups"></div>
+        </div>
+    </section>
+
+    <!-- Cleaning -->
+    <section id="cleaning" class="section">
+        <div class="container">
+            <h2 class="section-title">4 · Clean the dataset</h2>
+            <p class="section-sub">
+                A professional cleaning pipeline runs each step in dependency order — type
+                inference before imputation, null normalization before everything. Toggle the
+                stages you want; defaults reflect best practice.
+            </p>
+
+            <div class="card clean-card">
+                <div class="clean-groups" id="clean-options">
+
+                    <div class="opt-group">
+                        <div class="opt-group-head">
+                            <span class="opt-group-num">01</span>
+                            <div>
+                                <h4>Structure &amp; headers</h4>
+                                <p>Tidy column names and drop columns that carry no signal.</p>
+                            </div>
+                        </div>
+                        <label class="opt"><input type="checkbox" data-opt="normalize_headers" checked> <span>Normalize headers to <code>snake_case</code></span></label>
+                        <label class="opt"><input type="checkbox" data-opt="drop_empty_columns" checked> <span>Drop fully-empty columns</span></label>
+                        <label class="opt"><input type="checkbox" data-opt="drop_constant_columns" checked> <span>Drop constant (zero-variance) columns</span></label>
+                        <label class="opt"><input type="checkbox" data-opt="drop_high_missing"> <span>Drop columns &gt; 60% missing</span></label>
+                    </div>
+
+                    <div class="opt-group">
+                        <div class="opt-group-head">
+                            <span class="opt-group-num">02</span>
+                            <div>
+                                <h4>Values &amp; text</h4>
+                                <p>Repair disguised nulls, whitespace, and inconsistent labels.</p>
+                            </div>
+                        </div>
+                        <label class="opt"><input type="checkbox" data-opt="recognize_nulls" checked> <span>Recognize disguised nulls (<code>NA</code>, <code>?</code>, <code>-</code>)</span></label>
+                        <label class="opt"><input type="checkbox" data-opt="strip_whitespace" checked> <span>Trim &amp; collapse whitespace</span></label>
+                        <label class="opt"><input type="checkbox" data-opt="standardize_categories" checked> <span>Unify category casing &amp; spelling variants</span></label>
+                    </div>
+
+                    <div class="opt-group">
+                        <div class="opt-group-head">
+                            <span class="opt-group-num">03</span>
+                            <div>
+                                <h4>Type inference</h4>
+                                <p>Detect the real type hiding inside text columns.</p>
+                            </div>
+                        </div>
+                        <label class="opt"><input type="checkbox" data-opt="coerce_numeric" checked> <span>Parse numbers from text (<code>$1,200</code>, <code>85%</code>)</span></label>
+                        <label class="opt"><input type="checkbox" data-opt="detect_booleans" checked> <span>Detect booleans (<code>yes/no</code>, <code>1/0</code>)</span></label>
+                        <label class="opt"><input type="checkbox" data-opt="convert_dates" checked> <span>Convert date strings → <code>datetime</code></span></label>
+                        <label class="opt"><input type="checkbox" data-opt="optimize_dtypes" checked> <span>Optimize dtypes (downcast &amp; categorize)</span></label>
+                    </div>
+
+                    <div class="opt-group">
+                        <div class="opt-group-head">
+                            <span class="opt-group-num">04</span>
+                            <div>
+                                <h4>Rows &amp; distributions</h4>
+                                <p>Handle duplicates, missing values, and outliers.</p>
+                            </div>
+                        </div>
+                        <label class="opt"><input type="checkbox" data-opt="impute_missing" checked> <span>Impute missing values (skew-aware)</span></label>
+                        <label class="opt"><input type="checkbox" data-opt="drop_duplicates" checked> <span>Remove duplicate rows</span></label>
+                        <label class="opt opt-select">
+                            <span>Outlier strategy</span>
+                            <select data-opt="outlier_strategy">
+                                <option value="none" selected>Keep as-is</option>
+                                <option value="cap">Cap to IQR fences (winsorize)</option>
+                                <option value="remove">Remove outlier rows</option>
+                            </select>
+                        </label>
+                    </div>
+
+                </div>
+                <div class="clean-actions">
+                    <button type="button" class="btn btn-primary btn-lg" id="clean-btn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
+                        </svg>
+                        Run cleaning pipeline
+                    </button>
+                    <span id="clean-status" class="clean-status" hidden>
+                        <span class="spinner"></span> Running the pipeline…
+                    </span>
+                </div>
+                <div id="clean-error" class="alert alert-error" hidden></div>
+            </div>
+
+            <div id="clean-results" hidden>
+                <!-- Before / After comparison cards -->
+                <div class="ba-grid" id="ba-grid"></div>
+
+                <!-- Cleaning insights -->
+                <div class="card">
+                    <h3 class="card-title">Cleaning insights</h3>
+                    <ul class="insights-list" id="cleaning-insights"></ul>
+                </div>
+
+                <!-- Action log -->
+                <div class="card">
+                    <h3 class="card-title">Actions performed</h3>
+                    <div class="action-log" id="action-log"></div>
+                </div>
+
+                <!-- Insights about the cleaned dataset -->
+                <div class="card">
+                    <h3 class="card-title">Insights about the cleaned dataset</h3>
+                    <ul class="insights-list" id="cleaned-narrative"></ul>
+                </div>
+
+                <!-- Download -->
+                <div class="card download-card">
+                    <div>
+                        <h3 class="card-title" style="margin:0 0 4px">Download the cleaned dataset</h3>
+                        <p class="muted" style="margin:0">CSV format · ready for analysis</p>
+                    </div>
+                    <a id="download-link" href="#" download class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download CSV
+                    </a>
+                </div>
+
+                <!-- PDF Report -->
+                <div class="card report-card">
+                    <div class="report-card-text">
+                        <h3 class="card-title" style="margin:0 0 4px">
+                            <span class="report-badge">PDF</span> Generate full analysis report
+                        </h3>
+                        <p class="muted" style="margin:0">
+                            A polished multi-page report including the executive summary, cleaning log,
+                            before/after comparison, statistics, insights, and all visualizations.
+                        </p>
+                    </div>
+                    <div class="report-card-actions">
+                        <button type="button" class="btn btn-primary btn-lg" id="report-btn">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            Generate Report
+                        </button>
+                        <span id="report-status" class="clean-status" hidden>
+                            <span class="spinner"></span> Building your report…
+                        </span>
+                        <a id="report-link" href="#" target="_blank" class="btn report-link" hidden>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 3h7v7"/>
+                                <path d="M10 14L21 3"/>
+                                <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/>
+                            </svg>
+                            Open report
+                        </a>
+                    </div>
+                    <div id="report-error" class="alert alert-error" hidden></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Charts -->
+    <section id="charts" class="section">
+        <div class="container">
+            <h2 class="section-title">5 · Visualizations</h2>
+            <p class="section-sub">Generated with <code>matplotlib</code> &amp; <code>seaborn</code>. Updates after cleaning.</p>
+            <div class="charts-grid" id="charts-grid"></div>
+        </div>
+    </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="site-footer">
+    <div class="container">
+        <p>DataGenius — Built with Flask · pandas · matplotlib · seaborn</p>
+    </div>
+</footer>
+
+<!-- Chat widget -->
+<div id="chat" class="chat-widget">
+    <button id="chat-toggle" class="chat-fab" aria-label="Open assistant">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+    </button>
+
+    <div class="chat-panel" id="chat-panel" hidden>
+        <div class="chat-header">
+            <div>
+                <div class="chat-title">DataGenius Assistant</div>
+                <div class="chat-status"><span class="dot"></span> Online</div>
+            </div>
+            <button id="chat-close" class="chat-close" aria-label="Close">×</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="msg msg-bot">
+                <div class="msg-bubble">Hi! 👋 I'm your data assistant. Ask me about rows, columns, missing values, statistics, or correlations — typos and shortened column names are fine (e.g. <em>"mean of STUDY_HOURS_P_DAY"</em>).</div>
+            </div>
+        </div>
+        <form id="chat-form" class="chat-input-row">
+            <input id="chat-input" type="text" placeholder="Ask about your data…" autocomplete="off" />
+            <button type="submit" class="btn btn-primary chat-send" aria-label="Send">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

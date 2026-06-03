@@ -1,0 +1,190 @@
+# kubernetes/deployment.yml
+# Apply with: kubectl apply -f kubernetes/
+# Or with Helm: helm upgrade --install data-genius ./helm/data-genius
+
+---
+# ─── Namespace ───────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data-genius
+
+---
+# ─── Secret (create manually or via Sealed Secrets / External Secrets) ───────
+# kubectl create secret generic data-genius-secrets \
+#   --from-literal=SECRET_KEY=your-secret-key \
+#   -n data-genius
+
+---
+# ─── Deployment ──────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-genius
+  namespace: data-genius
+  labels:
+    app: data-genius
+    version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: data-genius
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0        # Zero-downtime deploys
+  template:
+    metadata:
+      labels:
+        app: data-genius
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: data-genius
+          image: ghcr.io/YOUR_ORG/data-genius:latest  # ← replace with your registry
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+
+          env:
+            - name: FLASK_ENV
+              value: production
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: data-genius-secrets
+                  key: SECRET_KEY
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+          # Liveness: restart if the app is stuck
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            failureThreshold: 3
+
+          # Readiness: remove from load balancer if not ready
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: charts-storage
+              mountPath: /app/static/charts
+            - name: uploads-storage
+              mountPath: /app/static/uploads
+
+      volumes:
+        - name: charts-storage
+          emptyDir: {}    # Replace with PVC or cloud bucket mount in production
+        - name: uploads-storage
+          emptyDir: {}
+
+---
+# ─── Service ─────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-genius
+  namespace: data-genius
+  labels:
+    app: data-genius
+spec:
+  selector:
+    app: data-genius
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP   # Use LoadBalancer for direct external access, or use Ingress
+
+---
+# ─── Ingress (nginx) ─────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: data-genius
+  namespace: data-genius
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "32m"   # match MAX_CONTENT_LENGTH
+spec:
+  tls:
+    - hosts:
+        - data-genius.example.com
+      secretName: data-genius-tls
+  rules:
+    - host: data-genius.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: data-genius
+                port:
+                  number: 80
+
+---
+# ─── HorizontalPodAutoscaler ─────────────────────────────────────────────────
+# Scales 2→10 pods based on CPU & memory
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: data-genius-hpa
+  namespace: data-genius
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: data-genius
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70   # Scale up when CPU > 70%
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80   # Scale up when memory > 80%
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300   # Wait 5 min before scaling down

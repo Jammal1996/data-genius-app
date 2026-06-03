@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.*
+*.egg-info/
+dist/
+build/
+.git/
+.gitignore
+*.md
+tests/
+static/uploads/*
+static/charts/*
+!static/charts/.gitkeep
+!static/uploads/.gitkeep
