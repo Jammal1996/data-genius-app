@@ -30,6 +30,7 @@ COPY --from=builder /install /usr/local
 
 COPY app.py .
 COPY requirements.txt .
+COPY templates/ templates/
 COPY static/ static/
 
 RUN mkdir -p static/uploads static/charts \
